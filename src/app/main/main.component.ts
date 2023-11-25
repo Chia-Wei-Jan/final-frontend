@@ -102,6 +102,7 @@ export class MainComponent implements OnInit {
   ngOnInit(): void {
     this.setupCurrentUser();
     this.fetchFollowedUsers();
+    this.loadArticles();
   }
 
   setupCurrentUser(): void {
@@ -127,24 +128,10 @@ export class MainComponent implements OnInit {
   }
 
   loadArticles() {
-    // Fetch current user's articles
     this.postService.getArticles().subscribe({
       next: (response) => {
-        this.posts = response; 
-        this.filterPost = [...response];
-
-        // Fetch articles for each followed user
-        this.followedUsers.forEach(username => {
-          this.postService.getArticlesByUsername(username).subscribe({
-            next: (userArticlesResponse) => {
-              this.posts = [...this.posts, ...userArticlesResponse];
-              this.filterPost = [...this.filterPost, ...userArticlesResponse];
-            },
-            error: (error) => {
-              console.error(`Error fetching articles for user ${username}:`, error);
-            }
-          });
-        });
+        this.posts = response; // Assuming the response is an array of articles
+        console.log(this.posts);
       },
       error: (error) => {
         console.error('Error fetching articles:', error);
@@ -284,15 +271,8 @@ export class MainComponent implements OnInit {
         this.fetchFollowedUserDetails();
         this.newFollowerName = '';
 
-        this.postService.getArticlesByUsername(followerUsername).subscribe({
-          next: (userArticlesResponse) => {
-            this.posts = [...this.posts, ...userArticlesResponse];
-            this.filterPost = [...this.filterPost, ...userArticlesResponse];
-          },
-          error: (error) => {
-            console.error(`Error fetching articles for new follower ${followerUsername}:`, error);
-          }
-        });
+        // Update articles feed
+        this.loadArticles();
       },
       error: (error) => {
         console.error('Error adding follower:', error);
@@ -313,8 +293,8 @@ export class MainComponent implements OnInit {
         this.followedUsers = this.followedUsers.filter(username => username !== usernameToUnfollow);
         this.followedUsersDetails = this.followedUsersDetails.filter(user => user.username !== usernameToUnfollow);
 
-        this.posts = this.posts.filter(post => post.author !== usernameToUnfollow);
-        this.filterPost = this.filterPost.filter(post => post.author !== usernameToUnfollow);
+        // Update articles feed
+        this.loadArticles();
       },
       error: (error) => {
         console.error('Error unfollowing user:', error);
@@ -330,7 +310,7 @@ export class MainComponent implements OnInit {
       next: (response) => {
         this.followedUsers = response.following;
         this.fetchFollowedUserDetails();
-        this.loadArticles();
+        // this.loadArticles();
       },
       error: (error) => {
         console.error('Error fetching followed users:', error);
