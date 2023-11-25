@@ -1,8 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, from } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
-import { mergeMap, toArray } from 'rxjs/operators';
+
 
 @Injectable({
   providedIn: 'root'
@@ -30,6 +29,10 @@ export class PostService {
   // GET a specific article by id
   getArticleById(id: string): Observable<any> {
     return this.http.get(`${this.baseUrl}/articles/${id}`, { withCredentials: true });
+  }
+
+  getArticlesByUsername(username: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/articles/${username}`, { withCredentials: true });
   }
 
   // POST a new article and return updated list

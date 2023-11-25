@@ -3,7 +3,8 @@ import { PostService } from './posts/posts.service';
 import { RegisterationService } from '../auth/registeration/registeration.service';
 import { ProfileService } from '../profile/profile.service';
 import { Router } from '@angular/router';
-import { catchError, forkJoin, of } from 'rxjs';
+import { catchError, of, forkJoin } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 
 
 @Component({
@@ -101,43 +102,14 @@ export class MainComponent implements OnInit {
   ngOnInit(): void {
     this.setupCurrentUser();
     this.fetchFollowedUsers();
-    this.loadArticles();
   }
 
   setupCurrentUser(): void {
       const currentUser = this.registerationService.getCurrentUser();
-      
-      // if(!currentUser.id) {  // New user does not have ID
-      //     this.username = currentUser.username;
-      //     const loadHeadline = localStorage.getItem('headline');
-      //     this.headline = loadHeadline || '';
-      // } else {
-      //     this.fetchAllUsers();
-      //     this.fetchCurrentUserDetails(currentUser.id);
-      //     this.setupUserPosts(currentUser.id);
-      //     this.setupFollowedUsersPosts(currentUser.id);
-      // }
       this.username = currentUser.username
       this.getUserHeadline();
   }
 
-  fetchAllUsers(): void {
-      this.registerationService.getUser().subscribe(users => {
-          this.allUsers = users;
-      });
-  }
-
-  // fetchCurrentUserDetails(userId: number): void {
-  //     if(localStorage.getItem('headline')) {
-  //       localStorage.removeItem('headline');
-  //     }
-  //     this.postService.getUserById(userId).subscribe(data => {
-  //         this.user = data;
-  //         this.username = data.username;
-  //         this.headline = data.company.catchPhrase;
-  //         this.userId = data.id;
-  //     });
-  // }
 
   getUserHeadline() {
     const username = this.profileService.getCurrentUser().username; // Make sure the service can provide the current user's username
@@ -155,11 +127,24 @@ export class MainComponent implements OnInit {
   }
 
   loadArticles() {
+    // Fetch current user's articles
     this.postService.getArticles().subscribe({
-      next: (articlesArray) => { // assuming the response is an array directly
-        this.posts = articlesArray; 
-        this.filterPost = articlesArray;
-        console.log(articlesArray);
+      next: (response) => {
+        this.posts = response; 
+        this.filterPost = [...response];
+
+        // Fetch articles for each followed user
+        this.followedUsers.forEach(username => {
+          this.postService.getArticlesByUsername(username).subscribe({
+            next: (userArticlesResponse) => {
+              this.posts = [...this.posts, ...userArticlesResponse];
+              this.filterPost = [...this.filterPost, ...userArticlesResponse];
+            },
+            error: (error) => {
+              console.error(`Error fetching articles for user ${username}:`, error);
+            }
+          });
+        });
       },
       error: (error) => {
         console.error('Error fetching articles:', error);
@@ -297,12 +282,42 @@ export class MainComponent implements OnInit {
       next: (response) => {
         this.followedUsers = response.following;
         this.fetchFollowedUserDetails();
-  
-        this.newFollowerName = ''; 
+        this.newFollowerName = '';
+
+        this.postService.getArticlesByUsername(followerUsername).subscribe({
+          next: (userArticlesResponse) => {
+            this.posts = [...this.posts, ...userArticlesResponse];
+            this.filterPost = [...this.filterPost, ...userArticlesResponse];
+          },
+          error: (error) => {
+            console.error(`Error fetching articles for new follower ${followerUsername}:`, error);
+          }
+        });
       },
       error: (error) => {
         console.error('Error adding follower:', error);
         this.addFollowerErrorMessage = 'Failed to add follower. Please try again.';
+      }
+    });
+  }
+
+
+  unfollowUser(usernameToUnfollow: string): void {
+    if (!usernameToUnfollow) {
+      console.error('Username is required to unfollow.');
+      return;
+    }
+  
+    this.registerationService.unfollowUser(usernameToUnfollow).subscribe({
+      next: () => {
+        this.followedUsers = this.followedUsers.filter(username => username !== usernameToUnfollow);
+        this.followedUsersDetails = this.followedUsersDetails.filter(user => user.username !== usernameToUnfollow);
+
+        this.posts = this.posts.filter(post => post.author !== usernameToUnfollow);
+        this.filterPost = this.filterPost.filter(post => post.author !== usernameToUnfollow);
+      },
+      error: (error) => {
+        console.error('Error unfollowing user:', error);
       }
     });
   }
@@ -315,6 +330,7 @@ export class MainComponent implements OnInit {
       next: (response) => {
         this.followedUsers = response.following;
         this.fetchFollowedUserDetails();
+        this.loadArticles();
       },
       error: (error) => {
         console.error('Error fetching followed users:', error);
@@ -358,24 +374,6 @@ export class MainComponent implements OnInit {
     });
   }
 
-  unfollowUser(usernameToUnfollow: string): void {
-    if (!usernameToUnfollow) {
-      console.error('Username is required to unfollow.');
-      return;
-    }
-  
-    this.registerationService.unfollowUser(usernameToUnfollow).subscribe({
-      next: () => {
-        this.followedUsers = this.followedUsers.filter(username => username !== usernameToUnfollow);
-        this.followedUsersDetails = this.followedUsersDetails.filter(user => user.username !== usernameToUnfollow);
-      },
-      error: (error) => {
-        console.error('Error unfollowing user:', error);
-      }
-    });
-  }
-
-
 
   getCatchPhrase(): string {
     const index = Math.floor(Math.random() * this.catchPhrases.length);
@@ -416,20 +414,16 @@ export class MainComponent implements OnInit {
       // Call the service method to create the new post
       this.postService.addArticle(newPostData).subscribe({
         next: (response) => {
-          // The response should contain the list of all articles
-          // including the new one according to the requirement
-          this.posts = response.articles; // Update the local list of posts
+          this.posts = response.articles; 
           this.timestamp = response.date;
           this.filterPost = response.articles;
   
-          // Clear the input fields after successful post submission
           this.newPostTitle = '';
           this.newPostContent = '';
           this.imageBtnClick = false;
         },
         error: (error) => {
           console.error('Error submitting new post:', error);
-          // Handle the error, such as displaying an error message to the user
         }
       });
     }
