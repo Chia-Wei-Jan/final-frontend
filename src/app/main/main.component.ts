@@ -68,8 +68,9 @@ export class MainComponent implements OnInit {
   allUsers: any[] = [];
   addFollowerErrorMessage: String = '';
 
-  currentDate = new Date('2023-10-13');
-
+  editTexts: { [key: string]: string } = {};
+  newTitle: string = '';
+  newText: string = '';
   showComment: boolean = false; 
   newComment: string = ''; 
 
@@ -131,6 +132,7 @@ export class MainComponent implements OnInit {
     this.postService.getArticles().subscribe({
       next: (response) => {
         this.posts = response; // Assuming the response is an array of articles
+        this.filterPost = response;
         console.log(this.posts);
       },
       error: (error) => {
@@ -139,16 +141,7 @@ export class MainComponent implements OnInit {
     });
   }
 
-  addComment(comment: string): void {
-    // if (!this.post.comments) {
-    //   this.post.comments = [];
-    // }
-    // this.post.comments.push({ content: comment });
-  }
 
-  submitComment(postId: number, comment: string): void {
-    // console.log(postId, comment);
-  }
 
   // setupUserPosts(userId: number): void {
   //     this.postService.getPostsByIds([userId]).subscribe(posts => {
@@ -394,9 +387,7 @@ export class MainComponent implements OnInit {
       // Call the service method to create the new post
       this.postService.addArticle(newPostData).subscribe({
         next: (response) => {
-          this.posts = response.articles; 
-          this.timestamp = response.date;
-          this.filterPost = response.articles;
+          this.loadArticles();
   
           this.newPostTitle = '';
           this.newPostContent = '';
@@ -415,7 +406,7 @@ export class MainComponent implements OnInit {
     if(this.searchKeyword) {
       const tolowerSearchKeyword = this.searchKeyword.toLocaleLowerCase();
       this.filterPost = this.posts.filter(post => 
-        post.authorName && post.authorName.toLocaleLowerCase().includes(tolowerSearchKeyword) || post.body && post.body.toLocaleLowerCase().includes(tolowerSearchKeyword)
+        post.author && post.author.toLocaleLowerCase().includes(tolowerSearchKeyword) || post.title && post.title.toLocaleLowerCase().includes(tolowerSearchKeyword) || post.body && post.body.toLocaleLowerCase().includes(tolowerSearchKeyword)
       );
     }
     else {
@@ -428,17 +419,74 @@ export class MainComponent implements OnInit {
     this.newPostContent = '';
   }
 
-  editPost(postId: number): void {
-    console.log('Editing post with ID:', postId);
+  enableEditing(post: any): void {
+    post.editing = true;
+    post.editedText = post.text; // Copy the current text to a new property
+  }
+  
+  saveChanges(post: any): void {
+    const updatedData = { text: post.editedText };
+
+    this.postService.updateArticle(post._id, updatedData).subscribe({
+      next: (response) => {
+        post.text = post.editedText;
+        post.editing = false; 
+      },
+      error: (error) => {
+        console.error('Error saving post:', error);
+      }
+    });
+  }
+  
+  cancelEditing(post: any): void {
+    post.editing = false;
+    post.editedText = post.text;
   }
 
-  commentPost(postId: number): void {
-    console.log('Commenting on post with ID:', postId);
+  editPost(post: any): void {
+    if (!post.editedText) {
+      return;
+    }
+
+    const updatedData = {
+      text: post.editedText,
+      // Add other fields if necessary, e.g., commentId
+    };
+
+    // Call the service method to update the article
+    this.postService.updateArticle(post.id, updatedData).subscribe({
+      next: (response) => {
+        post.text = post.editedText;
+        post.editing = false;
+      },
+      error: (error) => {
+        console.error('Error updating post:', error);
+      }
+    });
+  }
+
+  submitComment(postId: string, commentText: string): void {
+    if (!commentText) {
+      console.error('Comment text is required.');
+      return;
+    }
+  
+    const commentData = { text: commentText, commentId: '-1' };
+    this.postService.addComment(postId, commentData).subscribe({
+      next: (response) => {
+        this.loadArticles();
+      },
+      error: (error) => {
+        console.error('Error submitting comment:', error);
+      }
+    });
   }
 
   viewProfile(): void {
     this.router.navigate(['/profile']);
   }
+
+
 
   logout(): void {
     this.registerationService.logoutUser().subscribe(

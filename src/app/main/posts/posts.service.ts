@@ -41,7 +41,11 @@ export class PostService {
   }
 
   // PUT to update an existing article
-  updateArticle(id: string, articleData: { text: string, commentId?: string }): Observable<any> {
-    return this.http.put(`${this.baseUrl}/articles/${id}`, articleData, { withCredentials: true });
+  updateArticle(articleId: string, updatedData: { text: string }): Observable<any> {
+    return this.http.put(`${this.baseUrl}/articles/${articleId}`, updatedData, { withCredentials: true });
   }
+
+  addComment(postId: string, commentData: { text: string; commentId: string }): Observable<any> {
+    return this.http.put(`${this.baseUrl}/articles/${postId}`, commentData, { withCredentials: true });
+  } 
 }
