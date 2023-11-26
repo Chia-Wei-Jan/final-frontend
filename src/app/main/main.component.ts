@@ -482,11 +482,42 @@ export class MainComponent implements OnInit {
     });
   }
 
+  enableCommentEditing(comment: any) {
+    comment.isEditing = true;
+    comment.editedText = comment.text; // Make sure editedText is a property on your comment object
+  }
+
+  // Submit the edited comment
+  submitCommentEdit(postId: string, comment: any) {
+    if (!comment.editedText.trim()) {
+      console.error('Comment text is required.');
+      return;
+    }
+
+    const updatedCommentData = {
+      text: comment.editedText,
+      commentId: comment._id // Assuming _id is the identifier for the comment
+    };
+
+    this.postService.updateComment(postId, updatedCommentData).subscribe({
+      next: (response) => {
+        // Assuming the response contains the updated article with the updated comment
+        comment.text = comment.editedText; // Update the text of the comment
+        comment.isEditing = false; // Exit editing mode
+      },
+      error: (error) => {
+        console.error('Error updating comment:', error);
+      }
+    });
+  }
+
+  cancelCommentEditing(comment: any) {
+    comment.isEditing = false;
+  }
+
   viewProfile(): void {
     this.router.navigate(['/profile']);
   }
-
-
 
   logout(): void {
     this.registerationService.logoutUser().subscribe(

@@ -48,4 +48,8 @@ export class PostService {
   addComment(postId: string, commentData: { text: string; commentId: string }): Observable<any> {
     return this.http.put(`${this.baseUrl}/articles/${postId}`, commentData, { withCredentials: true });
   } 
+
+  updateComment(articleId: string, commentData: { text: string, commentId: string }): Observable<any> {
+    return this.http.put(`${this.baseUrl}/articles/${articleId}`, commentData, { withCredentials: true });
+  }
 }
