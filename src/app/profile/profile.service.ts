@@ -50,4 +50,19 @@ export class ProfileService {
   updateUserPassword(newPassword: string): Observable<any> {
     return this.http.put(`${this.baseUrl}/password`, { password: newPassword }, { withCredentials: true });
   }
+
+
+  getAvatar(username?: string): Observable<any> {
+    const url = username ? `${this.baseUrl}/avatar/${username}` : `${this.baseUrl}/avatar`;
+    return this.http.get<any>(url, { withCredentials: true });
+  }
+
+  updateUserAvatar(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('image', file); 
+
+    return this.http.put<any>(`${this.baseUrl}/avatar`, formData, {
+      withCredentials: true,
+    });
+  }
 }

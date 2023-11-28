@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { ProfileService } from '../profile/profile.service';
 import { FormGroup, FormControl, FormBuilder, Validators, ReactiveFormsModule  } from '@angular/forms';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-profile',
@@ -8,7 +9,7 @@ import { FormGroup, FormControl, FormBuilder, Validators, ReactiveFormsModule  }
   styleUrls: ['./profile.component.css']
 })
 export class ProfileComponent implements OnInit {
-  avatarUrl: string = 'https://brand.rice.edu/sites/g/files/bxs2591/files/2019-08/190308_Rice_Mechanical_Brand_Standards_Logos-2.png'; 
+  avatarUrl: string = ''; 
   username: string = '';
   email: string = '';
   zipcode: string = '';
@@ -16,9 +17,11 @@ export class ProfileComponent implements OnInit {
   password: string = '';
   showPassword: string = '';
 
-  selectAvatar: File | null = null;
+  selectedFile: File | null = null;
 
   profileForm: FormGroup;
+
+ @ViewChild('inputImage') inputImage?: ElementRef;
 
   constructor(private profileService: ProfileService, private fb: FormBuilder) {
     this.profileForm = new FormGroup({
@@ -33,53 +36,6 @@ export class ProfileComponent implements OnInit {
   ngOnInit(): void {
     this.initializeForm();
     this.loadUserProfile();
-    // const currentUser = this.registerationService.getCurrentUser();
-
-    // // Default values to prevent possible undefined errors.
-    // const defaultUser = {
-    //   username: '',
-    //   email: '',
-    //   phone: '',
-    //   address: { zipcode: '' },
-    //   avatarUrl: this.avatarUrl,
-    //   password: ''
-    // };  
-
-    // const user = { ...defaultUser, ...currentUser };
-
-    // this.username = user.username;
-    // this.email = user.email;
-    // this.phone = user.phone.split(' x')[0];
-    // if (this.phone.startsWith('1-')) {
-    //   this.phone = this.phone.slice(2); 
-    // }
-
-    // if(user.zipcode) {
-    //   this.zipcode = user.zipcode;
-    // }
-    // else {
-    //   this.zipcode = user.address.zipcode.split('-')[0]; 
-    // }
-
-    // this.avatarUrl = user.avatarUrl;
-
-    // if (user.address && user.address.street) {
-    //   this.password = user.address.street;
-    // }
-    // else {
-    //   this.password = user.password;
-    // }
-  
-    // this.showPassword = '*'.repeat(this.password.length);
-
-    // this.profileForm = this.fb.group({
-    //   username: [''],
-    //   email: ['', [Validators.required, Validators.email]],
-    //   zipcode: ['', [Validators.pattern(/^\d{5}$/)]],
-    //   phone: ['', [Validators.pattern(/^\d{3}-\d{3}-\d{4}$/)]],
-    //   password: [''],
-    //   confirmPassword: ['']
-    // }, { validators: this.passwordMatch });
   }
 
   initializeForm() {
@@ -113,6 +69,8 @@ export class ProfileComponent implements OnInit {
         this.phone = response.phone;
       });
     }
+
+    this.loadUserAvatar();
   }
 
 
@@ -126,12 +84,36 @@ export class ProfileComponent implements OnInit {
     return null;
   }
 
-  uploadAvatar(event: Event): void {
-    const input = event?.target as HTMLInputElement;
-    if(input.files && input.files[0]) {
-      this.selectAvatar = input.files[0];
-    }
+  handleFileInput(event: Event) {
+    const element = event.target as HTMLInputElement;
+    this.selectedFile = element.files && element.files.length > 0 ? element.files[0] : null;
   }
+
+
+  loadUserAvatar() {
+    this.profileService.getAvatar(this.username).subscribe(
+      response => {
+        this.avatarUrl = response.avatar;
+      },
+      error => {
+        console.error('Error fetching avatar:', error);
+      }
+    );
+  }
+
+  uploadAvatar() {
+      if (this.selectedFile) {
+          this.profileService.updateUserAvatar(this.selectedFile).subscribe(
+              response => {
+                  this.avatarUrl = response.avatar;
+              },
+              error => {
+                
+              }
+          );
+      }
+  }
+
 
   updateProfile() {
     let hasError = false;
@@ -162,33 +144,14 @@ export class ProfileComponent implements OnInit {
         return;
     }
 
-    // // Update the fields that have a value entered
-    // if (this.profileForm.value.username) {
-    //     this.username = this.profileForm.value.username;
-    // }
-    // if (this.profileForm.value.email) {
-    //     this.email = this.profileForm.value.email;
-    // }
-    // if (this.profileForm.value.zipcode) {
-    //     this.zipcode = this.profileForm.value.zipcode;
-    // }
-    // if (this.profileForm.value.phone) {
-    //     this.phone = this.profileForm.value.phone;
-    // }
-    // if (this.profileForm.controls['password'].value) {
-    //   this.showPassword = '*'.repeat(this.profileForm.controls['password'].value.length);
-    // }
-
 
     if (this.profileForm.value.email && this.profileForm.value.email !== this.email) {
       this.profileService.updateUserEmail(this.profileForm.value.email).subscribe({
         next: (response) => {
-          // Handle the response, e.g., updating the email in the component
           this.email = response.email;
         },
         error: (error) => {
           console.error('Error updating email:', error);
-          // Handle error scenario, e.g., showing an error message to the user
         }
       });
     }

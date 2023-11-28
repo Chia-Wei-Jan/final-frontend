@@ -20,8 +20,12 @@ export class MainComponent implements OnInit {
   newHeadline: string = ''; 
   avatarUrl: string = 'https://brand.rice.edu/sites/g/files/bxs2591/files/2019-08/190308_Rice_Mechanical_Brand_Standards_Logos-2.png'; // Assuming a local path; replace with actual path
 
-
+  allPosts: any[] = [];
   posts: any[] = []; // Store the posts
+  currentPage: number = 1;
+  totalPosts :number = 0;
+  pageSize: number = 10;
+  
   user: any;
   username: string = '';
   userId: any;
@@ -37,31 +41,6 @@ export class MainComponent implements OnInit {
   timestamp: any[] = [];
   newFollowerName: string = '';
   imageBtnClick: boolean = false;
-  catchPhrases: string[] = [
-    'Bridging the gap.',
-    'A touch of genius.',
-    'Accelerate your world.',
-    'Driven by passion.',
-    'Think different.',
-    'Making a difference.',
-    'Future is now.',
-    'Beyond boundaries.',
-    'Innovate, integrate, captivate.',
-    'Excellence in action.',
-    'Change the world.',
-    'Inspiration comes standard.',
-    'Reach for the skies.',
-    'Redefining possibilities.',
-    'Breaking barriers.',
-    'Pushing the limits.',
-    'Challenge everything.',
-    'Imagine. Innovate. Inspire.',
-    'Simplicity is the ultimate sophistication.',
-    'We make dreams a reality.'
-  ];
-
-
-  defaultHeadline: string = 'Default follower headline!';
 
   selectImage: File | null = null;
   newUser: boolean = false;
@@ -73,30 +52,6 @@ export class MainComponent implements OnInit {
   newText: string = '';
   showComment: boolean = false; 
   newComment: string = ''; 
-
-  comments: string[] = [
-    "Amy: Wow, this really brings back memories.",
-    "John: Congratulations on your achievement!",
-    "Sophia: Keeping you in my thoughts and prayers.",
-    "Ethan: Your photos are always so captivating.",
-    "Liam: The kids have grown so much! They look wonderful.",
-    "Olivia: This genuinely made me laugh out loud.",
-    "Emma: Interesting post! Could you share the source?",
-    "Noah: It's been ages! We should definitely reconnect soon.",
-    "Ava: I feel this on a personal level.",
-    "James: Wishing you a joyous birthday and many happy returns.",
-    "Charlotte: Stunning scenery! Where was this taken?",
-    "Mia: Your style is impeccable. Where did you buy that outfit?",
-    "Elijah: I appreciate the suggestion. I'll give it a try.",
-    "Lucas: Missing our times together. Hope we can meet up soon.",
-    "Harper: Thank you for sharing this. It's truly impactful.",
-    "Aiden: Funny enough, I was pondering the same thing recently.",
-    "Emily: Sending warm wishes your way.",
-    "Daniel: It's amazing how quickly time passes.",
-    "Grace: That dish looks scrumptious! Mind sharing the recipe?",
-    "Benjamin: Your accomplishments never cease to amaze me."
-  ];
-
 
   constructor(private postService: PostService, private registerationService: RegisterationService, private profileService: ProfileService, private router: Router) {}  // Inject the PostService
 
@@ -110,15 +65,16 @@ export class MainComponent implements OnInit {
       const currentUser = this.registerationService.getCurrentUser();
       this.username = currentUser.username
       this.getUserHeadline();
+      this.loadUserAvatar();
   }
 
 
   getUserHeadline() {
-    const username = this.profileService.getCurrentUser().username; // Make sure the service can provide the current user's username
+    const username = this.profileService.getCurrentUser().username; 
     if (username) {
       this.profileService.getUserHeadline(username).subscribe(
         response => {
-          this.headline = response.headline; // Assuming the response structure is { username: 'user', headline: 'Happy' }
+          this.headline = response.headline; 
         },
         error => {
           console.error('Error fetching user headline:', error);
@@ -128,12 +84,23 @@ export class MainComponent implements OnInit {
     }
   }
 
+  loadUserAvatar() {
+    this.profileService.getAvatar(this.username).subscribe(
+      response => {
+        this.avatarUrl = response.avatar;
+      },
+      error => {
+        console.error('Error fetching avatar:', error);
+      }
+    );
+  }
+
   loadArticles() {
     this.postService.getArticles().subscribe({
       next: (response) => {
-        this.posts = response; // Assuming the response is an array of articles
-        this.filterPost = response;
-        console.log(this.posts);
+        this.allPosts = response; 
+        this.totalPosts = response.length;
+        this.updatePage(this.currentPage); // Initialize the view with the first page
       },
       error: (error) => {
         console.error('Error fetching articles:', error);
@@ -141,73 +108,24 @@ export class MainComponent implements OnInit {
     });
   }
 
+  updatePage(page: number) {
+    const startIndex = (page - 1) * this.pageSize;
+    const endIndex = Math.min(startIndex + this.pageSize, this.totalPosts);
+    this.posts = this.allPosts.slice(startIndex, endIndex);
+    this.filterPost = this.allPosts.slice(startIndex, endIndex);
+    this.currentPage = page;
+  }
 
+  goToPage(page: number) {
+    if (page < 1 || page > this.totalPages) {
+      return;
+    }
+    this.updatePage(page);
+  }
 
-  // setupUserPosts(userId: number): void {
-  //     this.postService.getPostsByIds([userId]).subscribe(posts => {
-  //         this.initializePosts(posts);
-  //     });
-  // }
-
-  // setupFollowedUsersPosts(userId: number): void {
-  //     this.registerationService.getFollowedUsers(userId).subscribe(followedUsers => {
-  //         if (followedUsers && followedUsers.length > 0) {
-  //             this.followedUsers = followedUsers.map(user => ({
-  //                 ...user,
-  //                 avatar: this.getRandomAvatar()
-  //             }));
-
-  //             const followedIds = this.followedUsers.map(user => user.id);
-              
-  //             this.postService.getPostsByIds(followedIds).subscribe(followedUserPosts => {
-  //                 this.initializeFollowedUsersPosts(followedUserPosts);
-  //             });
-  //         } else {
-  //             this.followedUsers = [];
-  //         }
-  //     });
-  // }
-
-  // initializePosts(posts: any[]): void {
-  //     let currentDate = new Date('2023-10-12');
-
-  //     if (posts && posts.length > 0) {
-  //         this.posts = posts;
-
-  //         this.posts.forEach((post, index) => {
-  //             post.image = this.getRandomImage();
-  //             post.comments = this.getRandomComment();
-  //             post.timestamp = new Date(currentDate);
-  //             this.postService.getUserById(post.userId).subscribe(author => {
-  //                 post.authorName = author.username;
-  //             });
-  //             currentDate.setDate(currentDate.getDate() - 1);
-  //         });
-  //     } else {
-  //         this.posts = [];
-  //     }
-
-  //     this.searchPost();
-  // }
-
-  // initializeFollowedUsersPosts(followedUserPosts: any[]): void {
-  //     let currentDate = new Date('2023-10-12');
-
-  //     if (followedUserPosts && followedUserPosts.length > 0) {
-  //         this.posts = [...this.posts, ...followedUserPosts];
-  //         this.filterPost = [...this.posts];
-
-  //         followedUserPosts.forEach(post => {
-  //             post.image = this.getRandomImage();
-  //             post.timestamp = new Date(currentDate);
-  //             this.postService.getUserById(post.userId).subscribe(author => {
-  //                 post.authorName = author.username;
-  //             });
-
-  //             currentDate.setDate(currentDate.getDate() - 1);
-  //         });
-  //     }
-  // }
+  get totalPages(): number {
+    return Math.ceil(this.allPosts.length / this.pageSize);
+  }
 
 
   setLocalStorage(key: string, value: any): void {
@@ -312,14 +230,12 @@ export class MainComponent implements OnInit {
   }
 
   fetchFollowedUserDetails(): void {
-    // Ensure there's a current user set before fetching details
     const currentUser = this.profileService.getCurrentUser();
     if (!currentUser || !currentUser.username) {
       console.error('No current user found.');
       return;
     }
   
-    // Ensure we have an array of followed users to fetch details for
     if (!this.followedUsers || this.followedUsers.length === 0) {
       console.error('No followed users to fetch details for.');
       return;
@@ -348,26 +264,12 @@ export class MainComponent implements OnInit {
   }
 
 
-  getCatchPhrase(): string {
-    const index = Math.floor(Math.random() * this.catchPhrases.length);
-    return this.catchPhrases[index];
-  }
-
   getRandomImage(): string {
     return `https://picsum.photos/800/300?random=${Math.random()}`;
   }
 
   getRandomAvatar(): string {
     return `https://picsum.photos/200/300?random=${Math.random()}`;
-  }
-
-  getRandomComment(): string[] {
-    let randomComment: string[] = [];
-    for (let i = 0; i < 3; i++) {
-      const index = Math.floor(Math.random() * this.comments.length);
-      randomComment.push(this.comments[index]);
-    }
-    return randomComment;
   }
 
   uploadImageBtn(): void {
@@ -484,7 +386,7 @@ export class MainComponent implements OnInit {
 
   enableCommentEditing(comment: any) {
     comment.isEditing = true;
-    comment.editedText = comment.text; // Make sure editedText is a property on your comment object
+    comment.editedText = comment.text; 
   }
 
   // Submit the edited comment
@@ -496,14 +398,13 @@ export class MainComponent implements OnInit {
 
     const updatedCommentData = {
       text: comment.editedText,
-      commentId: comment._id // Assuming _id is the identifier for the comment
+      commentId: comment._id 
     };
 
     this.postService.updateComment(postId, updatedCommentData).subscribe({
       next: (response) => {
-        // Assuming the response contains the updated article with the updated comment
-        comment.text = comment.editedText; // Update the text of the comment
-        comment.isEditing = false; // Exit editing mode
+        comment.text = comment.editedText; 
+        comment.isEditing = false; 
       },
       error: (error) => {
         console.error('Error updating comment:', error);
