@@ -241,26 +241,44 @@ export class MainComponent implements OnInit {
       return;
     }
   
-    // Create an array of Observables for each detail fetch request
-    const detailObservables = this.followedUsers.map(username => {
-      return this.profileService.getUserHeadline(username).pipe(
-        catchError(error => {
-          console.error(`Error fetching details for user ${username}:`, error);
-          return of({ username, headline: 'Unavailable', avatar: 'default-avatar.png' });
-        })
-      );
+    this.followedUsers.forEach(username => {
+      this.fetchUserHeadline(username);
+      this.fetchUserAvatar(username);
     });
+  }
   
-    // Use forkJoin to execute all Observables and wait for their completion
-    forkJoin(detailObservables).subscribe(responses => {
-      this.followedUsersDetails = responses.map(response => {
-        return {
-          username: response.username,
-          headline: response.headline,
-          avatar: response.avatar 
-        };
-      });
-    });
+  fetchUserHeadline(username: string): void {
+    this.profileService.getUserHeadline(username).subscribe(
+      response => {
+        const index = this.followedUsersDetails.findIndex(user => user.username === username);
+        if (index >= 0) {
+          this.followedUsersDetails[index].headline = response.headline;
+        } else {
+          this.followedUsersDetails.push({ username, headline: response.headline, avatar: null });
+        }
+      },
+      error => {
+        console.error(`Error fetching headline for user ${username}:`, error);
+        // Handle error, e.g., by setting a default headline
+      }
+    );
+  }
+  
+  fetchUserAvatar(username: string): void {
+    this.profileService.getAvatar(username).subscribe(
+      response => {
+        const index = this.followedUsersDetails.findIndex(user => user.username === username);
+        if (index >= 0) {
+          this.followedUsersDetails[index].avatar = response.avatar;
+        } else {
+          this.followedUsersDetails.push({ username, headline: null, avatar: response.avatar });
+        }
+      },
+      error => {
+        console.error(`Error fetching avatar for user ${username}:`, error);
+        // Handle error, e.g., by setting a default avatar
+      }
+    );
   }
 
 
