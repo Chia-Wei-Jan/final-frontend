@@ -44,8 +44,7 @@
           <h3 class="card-title">Create a New Post</h3>
           <input [(ngModel)]="newPostTitle" placeholder="Post Title" class="form-control mb-3">
           <textarea [(ngModel)]="newPostContent" row="5" placeholder="Type your post..." class="form-control mb-3"></textarea>
-          <input type="file" #inputImage (change)="uploadImage($event)" class="d-none">
-          <button class="btn btn-sm btn-info mb-2" (click)=" uploadImageBtn(); inputImage.click()">Upload Image</button>
+          <input type="file" accept="image/*" (change)="handleFileInput($event)">
           <div class="d-flex justify-content-between">
             <button class="btn btn-primary" (click)="submitPost()">Post</button>
             <button class="btn btn-secondary" (click)="clearPost()">Cancel</button>

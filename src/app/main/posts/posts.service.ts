@@ -40,6 +40,10 @@ export class PostService {
     return this.http.post(`${this.baseUrl}/article`, articleData, { withCredentials: true });
   }
 
+  addArticleWithImage(articleData: FormData): Observable<any> {
+    return this.http.post(`${this.baseUrl}/article-with-image`, articleData, { withCredentials: true });
+  }
+
   // PUT to update an existing article
   updateArticle(articleId: string, updatedData: { text: string }): Observable<any> {
     return this.http.put(`${this.baseUrl}/articles/${articleId}`, updatedData, { withCredentials: true });

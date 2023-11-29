@@ -4,7 +4,6 @@ import { RegisterationService } from '../auth/registeration/registeration.servic
 import { ProfileService } from '../profile/profile.service';
 import { Router } from '@angular/router';
 import { catchError, of, forkJoin } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
 
 
 @Component({
@@ -42,7 +41,7 @@ export class MainComponent implements OnInit {
   newFollowerName: string = '';
   imageBtnClick: boolean = false;
 
-  selectImage: File | null = null;
+  selectedFile: File | null = null;
   newUser: boolean = false;
   allUsers: any[] = [];
   addFollowerErrorMessage: String = '';
@@ -78,7 +77,6 @@ export class MainComponent implements OnInit {
         },
         error => {
           console.error('Error fetching user headline:', error);
-          // Handle the error appropriately
         }
       );
     }
@@ -154,13 +152,6 @@ export class MainComponent implements OnInit {
     }
   }
 
-  uploadImage(event: Event): void {
-    // const input = event?.target as HTMLInputElement;
-    // if(input.files && input.files[0]) {
-    //   this.selectImage = input.files[0];
-    // }
-  }
-
   addFollower(): void {
     this.addFollowerErrorMessage = '';
     const followerUsername = this.newFollowerName.trim();
@@ -221,7 +212,6 @@ export class MainComponent implements OnInit {
       next: (response) => {
         this.followedUsers = response.following;
         this.fetchFollowedUserDetails();
-        // this.loadArticles();
       },
       error: (error) => {
         console.error('Error fetching followed users:', error);
@@ -259,7 +249,6 @@ export class MainComponent implements OnInit {
       },
       error => {
         console.error(`Error fetching headline for user ${username}:`, error);
-        // Handle error, e.g., by setting a default headline
       }
     );
   }
@@ -276,7 +265,6 @@ export class MainComponent implements OnInit {
       },
       error => {
         console.error(`Error fetching avatar for user ${username}:`, error);
-        // Handle error, e.g., by setting a default avatar
       }
     );
   }
@@ -290,37 +278,65 @@ export class MainComponent implements OnInit {
     return `https://picsum.photos/200/300?random=${Math.random()}`;
   }
 
-  uploadImageBtn(): void {
 
-    this.imageBtnClick = true;
+  handleFileInput(event: Event) {
+    const element = event.target as HTMLInputElement;
+    this.selectedFile = element.files && element.files.length > 0 ? element.files[0] : null;
   }
+
 
   submitPost(): void {
     if (this.newPostTitle.trim() && this.newPostContent.trim()) {
-      // Create the post object to send to the backend
-      const newPostData = {
-        title: this.newPostTitle,
-        text: this.newPostContent,
-        image: this.imageBtnClick ? this.getRandomImage() : null,
-      };
-  
-      // Call the service method to create the new post
-      this.postService.addArticle(newPostData).subscribe({
-        next: (response) => {
-          this.loadArticles();
-  
-          this.newPostTitle = '';
-          this.newPostContent = '';
-          this.imageBtnClick = false;
-        },
-        error: (error) => {
-          console.error('Error submitting new post:', error);
-        }
-      });
-    }
-  }
+      console.log(this.selectedFile);
+      if(!this.selectedFile) {
+        // Create the post object to send to the backend
+        const newPostData = {
+          title: this.newPostTitle,
+          text: this.newPostContent,
+        };
+
+
+        // Call the service method to create the new post
+        this.postService.addArticle(newPostData).subscribe({
+          next: (response) => {
+            this.loadArticles();
+    
+            this.newPostTitle = '';
+            this.newPostContent = '';
+            this.imageBtnClick = false;
+          },
+          error: (error) => {
+            console.error('Error submitting new post:', error);
+          }
+        });
+      }
+      else {
+        const formData = new FormData();
+        formData.append('title', this.newPostTitle);
+        formData.append('text', this.newPostContent);
+        formData.append('image', this.selectedFile);
+
+        // Call the service method to create the new post
+        this.postService.addArticleWithImage(formData).subscribe({
+          next: (response) => {
+            this.loadArticles();
+            console.log(response);
+            console.log(response.author);
+            console.log(response.image);
+            this.newPostTitle = '';
+            this.newPostContent = '';
+            this.selectedFile = null;
+          },
+          error: (error) => {
+            console.error('Error submitting new post:', error);
+          }
+        });
+      }
   
 
+
+    }
+  }
 
   searchPost(): void { 
     if(this.searchKeyword) {
@@ -370,7 +386,6 @@ export class MainComponent implements OnInit {
 
     const updatedData = {
       text: post.editedText,
-      // Add other fields if necessary, e.g., commentId
     };
 
     // Call the service method to update the article

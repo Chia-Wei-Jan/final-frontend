@@ -90,6 +90,19 @@ export class ProfileComponent implements OnInit {
   }
 
 
+  uploadAvatar() {
+      if (this.selectedFile) {
+          this.profileService.updateUserAvatar(this.selectedFile).subscribe(
+              response => {
+                  this.avatarUrl = response.avatar;
+              },
+              error => {
+
+              }
+          );
+      }
+  }
+
   loadUserAvatar() {
     this.profileService.getAvatar(this.username).subscribe(
       response => {
@@ -100,20 +113,6 @@ export class ProfileComponent implements OnInit {
       }
     );
   }
-
-  uploadAvatar() {
-      if (this.selectedFile) {
-          this.profileService.updateUserAvatar(this.selectedFile).subscribe(
-              response => {
-                  this.avatarUrl = response.avatar;
-              },
-              error => {
-                
-              }
-          );
-      }
-  }
-
 
   updateProfile() {
     let hasError = false;
