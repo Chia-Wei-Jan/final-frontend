@@ -384,6 +384,10 @@ export class MainComponent implements OnInit {
       return;
     }
 
+    if(post.author != this.username) {
+      return;
+    }
+
     const updatedData = {
       text: post.editedText,
     };

@@ -57,9 +57,9 @@
         <div class="card-body">
 
         <!-- Toggle Edit Button -->
-        <button *ngIf="!post.editing" class="btn btn-sm btn-outline-primary edit-button" (click)="enableEditing(post)">Edit</button>
-        <button *ngIf="post.editing" class="btn btn-sm btn-outline-success save-button" (click)="saveChanges(post)">Save</button>
-        <button *ngIf="post.editing" class="btn btn-sm btn-outline-secondary cancel-button" (click)="cancelEditing(post)">Cancel</button>
+        <button *ngIf="!post.editing && post.author === username" class="btn btn-sm btn-outline-primary edit-button" (click)="enableEditing(post)">Edit</button>
+        <button *ngIf="post.editing && post.author === username" class="btn btn-sm btn-outline-success save-button" (click)="saveChanges(post)">Save</button>
+        <button *ngIf="post.editing && post.author === username" class="btn btn-sm btn-outline-secondary cancel-button" (click)="cancelEditing(post)">Cancel</button>
         
         <!-- Post Title and Author -->
         <h3 class="card-title">{{ post.title }}</h3>
@@ -93,10 +93,10 @@
                 <!-- Right side: Date and Edit button -->
                 <div class="text-muted text-nowrap">
                   {{ comment.date | date:'short' }}
-                  <button class="btn btn-outline-secondary btn-sm" (click)="enableCommentEditing(comment)">Edit</button>
+                  <button *ngIf="!comment.isEditing && comment.author === username" class="btn btn-outline-secondary btn-sm" (click)="enableCommentEditing(comment)">Edit</button>
                 </div>
                 <!-- Comment edit form -->
-                <div *ngIf="comment.isEditing" class="w-100 mt-2">
+                <div *ngIf="comment.isEditing && comment.author === username" class="w-100 mt-2">
                   <input type="text" [(ngModel)]="comment.editedText" placeholder="Edit your comment..." class="form-control form-control-sm mb-2">
                   <button class="btn btn-outline-success btn-sm mr-1" (click)="submitCommentEdit(post._id, comment)">Save</button>
                   <button class="btn btn-outline-danger btn-sm" (click)="cancelCommentEditing(comment)">Cancel</button>
