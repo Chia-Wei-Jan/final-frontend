@@ -107,7 +107,13 @@ export class AuthComponent implements OnInit {
       this.registerationService.registerUser(newUser).subscribe(
         response => {
           if (response.result === 'success') {
-             this.registerationService.setCurrentUser(response.username);
+            console.log(response);
+             console.log(response.username);
+            //  this.registerationService.setCurrentUser(response.username);
+            this.registerationService.setCurrentUser({
+              username: response.username,
+              password: '*'.repeat(this.registerForm.value.password.length)
+            });
              this.router.navigate(['/main']);
           }
         },
@@ -124,8 +130,6 @@ export class AuthComponent implements OnInit {
   }
 
   loginWithGoogle() {
-    // Redirect to your backend route for Google authentication
-    window.location.href = 'http://localhost:3000/auth/google';
-    // this.router.navigate(['/main']); 
+    window.location.href = 'https://ricebookserver-cj35-3b5c4f5224a3.herokuapp.com/auth/google';
   }
 }  
