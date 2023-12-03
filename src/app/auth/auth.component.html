@@ -19,6 +19,7 @@
             <div *ngIf="loginError" class="error-message mb-3">{{ loginError }}</div>
             <button type="submit" class="btn btn-primary">Login</button>
           </form>
+          <button class="btn btn-secondary mt-3" (click)="loginWithGoogle()">Login with Google</button>
         </div>
       </div>
     </div>

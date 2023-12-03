@@ -104,7 +104,6 @@ export class AuthComponent implements OnInit {
         zipcode: this.registerForm.value.zipcode,
         password: this.registerForm.value.password,
       };
-      console.log(newUser.username);
       this.registerationService.registerUser(newUser).subscribe(
         response => {
           if (response.result === 'success') {
@@ -122,5 +121,11 @@ export class AuthComponent implements OnInit {
     } else {
       this.registerError = 'Please fill in all required fields correctly.';
     }
+  }
+
+  loginWithGoogle() {
+    // Redirect to your backend route for Google authentication
+    window.location.href = 'http://localhost:3000/auth/google';
+    // this.router.navigate(['/main']); 
   }
 }  
